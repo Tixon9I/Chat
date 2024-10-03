@@ -27,9 +27,35 @@ namespace ChatServer
             _stream.Dispose();
         }
 
+        public async Task<bool> Authenticate(List<ChatClient> clients)
+        {
+            while (true) 
+            {
+                await SendMessage("Please enter your username:");
+                Username = await _reader.ReadLineAsync();
+
+                if (string.IsNullOrEmpty(Username))
+                {
+                    await SendMessage("Username cannot be empty. Try again.");
+                    continue;
+                }
+
+                if (clients.Any(c => c.Username == Username))
+                {
+                    await SendMessage("This name is already in use. Try another one.");
+                }
+                else
+                {
+                    Console.WriteLine($"User {Username} has joined the chat.");
+                    await SendMessage("You have successfully connected to the chat.");
+                    return true; 
+                }
+            }
+        }
+
+
         public async Task Run()
         {
-            Username = await _reader.ReadLineAsync();
             Console.WriteLine($"User {Username} has joined the chat.");
 
             string? message = string.Empty;
@@ -133,9 +159,13 @@ namespace ChatServer
                     var tcpClient = await server.AcceptTcpClientAsync();
                     var client = new ChatClient(tcpClient);
                     await SendChatHistoryToClient(client);
-                    client.MessageReceived += Client_MessageReceived;
-                    _clients.Add(client);
-                    var task = client.Run();
+
+                    if (await client.Authenticate(_clients))
+                    {
+                        client.MessageReceived += Client_MessageReceived;
+                        _clients.Add(client);
+                        var task = client.Run();
+                    }
                 }
             }
             finally

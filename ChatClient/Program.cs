@@ -28,12 +28,6 @@ namespace ChatClient
             var reader = new StreamReader(stream);
             var writer = new StreamWriter(stream);
 
-            Console.Write("Enter your name: ");
-            string username = Console.ReadLine();
-
-            await writer.WriteLineAsync(username);
-            await writer.FlushAsync();
-
             var readerTask = Task.Run(() =>
             {
                 string? message = string.Empty;
